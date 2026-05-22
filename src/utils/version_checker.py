@@ -3,6 +3,8 @@ import requests
 import logging
 from typing import Optional, Tuple
 
+from src.utils.platform_utils import is_windows
+
 logger = logging.getLogger(__name__)
 
 # Import version and repo from main module
@@ -137,7 +139,13 @@ def check_version_on_startup(show_message: bool = True) -> None:
         if update_available:
             logger.warning("=" * 60)
             logger.warning(f"UPDATE AVAILABLE: {current} -> {latest}")
-            logger.warning(f"Download: {VersionChecker.get_download_url()}")
+            if is_windows():
+                logger.warning(f"Download: {VersionChecker.get_download_url()}")
+            else:
+                logger.warning(
+                    "Linux: update with 'git pull' and re-run install.sh "
+                    "if dependencies changed."
+                )
             logger.warning("=" * 60)
         elif show_message and latest:
             logger.info(f"✓ Running latest version: {current}")

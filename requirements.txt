@@ -23,4 +23,7 @@ requests>=2.31.0,<3.0.0
 python-telegram-bot>=20.0,<21.0.0  # Telegram (optional)
 plyer>=2.1.0  # Desktop notifications (optional)
 
+# Windows-only: backs the BlueStacks/HD-Player window-minimize feature
+pywin32>=306; sys_platform == "win32"
+
 # Note: All version constraints ensure Python 3.8-3.12 compatibility

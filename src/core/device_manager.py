@@ -5,9 +5,15 @@ import io
 import time
 import logging
 from typing import Optional, Tuple
-from subprocess import Popen, PIPE, STARTUPINFO, CREATE_NO_WINDOW
-from platform import system
-from shutil import which
+from subprocess import Popen, PIPE
+
+from src.utils.platform_utils import (
+    AdbNotFoundError,
+    is_windows,
+    minimize_emulator_windows,
+    resolve_adb_path,
+    subprocess_hidden_kwargs,
+)
 
 try:
     from ppadb.client import Client
@@ -43,7 +49,17 @@ class DeviceManager:
         if self.connected:
             logger.info("Already connected")
             return True
-        
+
+        # Resolve adb early so a missing binary surfaces an actionable
+        # message before we try to use it. On Linux this raises
+        # AdbNotFoundError naming the install command; on Windows it
+        # always succeeds (falls back to literal 'adb' as a last resort).
+        try:
+            resolve_adb_path()
+        except AdbNotFoundError as e:
+            logger.error(str(e))
+            return False
+
         # Kill any hanging ADB processes first
         self._kill_adb_processes()
             
@@ -61,6 +77,12 @@ class DeviceManager:
             
         # Test connection with retries
         if not self._test_connection():
+            port = self.config.getint('ADVANCED', 'port', fallback=5037)
+            logger.error(
+                f"Could not reach any ADB device at 127.0.0.1:{port}. "
+                "Verify your emulator or device is running and exposed to "
+                "ADB (try 'adb devices' from a terminal)."
+            )
             return False
             
         # Verify device configuration
@@ -87,10 +109,9 @@ class DeviceManager:
             return
             
         logger.info("Starting emulator...")
-        Popen([emulator_path, '-v', '0'], 
-              shell=False, 
-              startupinfo=STARTUPINFO(), 
-              creationflags=CREATE_NO_WINDOW)
+        Popen([emulator_path, '-v', '0'],
+              shell=False,
+              **subprocess_hidden_kwargs())
         
         # Wait longer for emulator to start
         logger.info("Waiting for emulator to start (30 seconds)...")
@@ -119,7 +140,7 @@ class DeviceManager:
                 return self.adb.device(device.serial)
                 
         # Scan for port on Windows
-        if system() == 'Windows':
+        if is_windows():
             port = self._scan_for_port()
             if port:
                 return self._connect_to_port(port)
@@ -129,24 +150,21 @@ class DeviceManager:
     def _restart_adb(self):
         """Restart ADB server"""
         adb_path = self._get_adb_path()
-        Popen([adb_path, "kill-server"], 
-              stdout=PIPE, 
-              startupinfo=STARTUPINFO(), 
-              creationflags=CREATE_NO_WINDOW).communicate()
-        Popen([adb_path, "start-server"], 
-              stdout=PIPE, 
-              startupinfo=STARTUPINFO(), 
-              creationflags=CREATE_NO_WINDOW).communicate()
+        Popen([adb_path, "kill-server"],
+              stdout=PIPE,
+              **subprocess_hidden_kwargs()).communicate()
+        Popen([adb_path, "start-server"],
+              stdout=PIPE,
+              **subprocess_hidden_kwargs()).communicate()
               
     def _connect_to_port(self, port: int) -> Optional[any]:
         """Connect to device on specific port"""
         adb_path = self._get_adb_path()
         device_addr = f'127.0.0.1:{port}'
-        
-        result = Popen([adb_path, 'connect', device_addr], 
-                      stdout=PIPE, 
-                      startupinfo=STARTUPINFO(), 
-                      creationflags=CREATE_NO_WINDOW).communicate()[0]
+
+        result = Popen([adb_path, 'connect', device_addr],
+                      stdout=PIPE,
+                      **subprocess_hidden_kwargs()).communicate()[0]
                       
         if b'connected' in result:
             logger.info(f"Connected to {device_addr}")
@@ -161,10 +179,9 @@ class DeviceManager:
                "Select-Object -ExpandProperty Id) | "
                "Select-Object -ExpandProperty LocalPort")
                
-        result = Popen(["powershell.exe", cmd], 
-                      stdout=PIPE, 
-                      startupinfo=STARTUPINFO(), 
-                      creationflags=CREATE_NO_WINDOW).communicate()[0]
+        result = Popen(["powershell.exe", cmd],
+                      stdout=PIPE,
+                      **subprocess_hidden_kwargs()).communicate()[0]
                       
         ports = result.decode().splitlines()
         adb_path = self._get_adb_path()
@@ -174,10 +191,9 @@ class DeviceManager:
                 port = int(port_str.strip())
                 if port % 2 != 0:  # Odd ports only
                     device_addr = f'127.0.0.1:{port}'
-                    result = Popen([adb_path, 'connect', device_addr], 
-                                  stdout=PIPE, 
-                                  startupinfo=STARTUPINFO(), 
-                                  creationflags=CREATE_NO_WINDOW).communicate()[0]
+                    result = Popen([adb_path, 'connect', device_addr],
+                                  stdout=PIPE,
+                                  **subprocess_hidden_kwargs()).communicate()[0]
                     if b'connected' in result:
                         logger.info(f"Found port: {port}")
                         return port
@@ -205,16 +221,23 @@ class DeviceManager:
         return False
         
     def _verify_device_config(self):
-        """Verify device resolution and DPI"""
-        resolution = self.device.shell('wm size')
-        dpi = self.device.shell('wm density')
-        
+        """Verify device resolution and DPI (advisory only, never blocks)."""
+        resolution = self.device.shell('wm size').strip()
+        dpi = self.device.shell('wm density').strip()
+
         logger.debug(f"Resolution: {resolution}")
         logger.debug(f"DPI: {dpi}")
-        
-        # Check for 1920x1080 or 1080x1920
-        if '1920x1080' not in resolution and '1080x1920' not in resolution:
-            logger.warning("Non-standard resolution detected. Image scaling will be applied.")
+
+        # Recommended: 1920x1080 (or 1080x1920 portrait) at DPI 240.
+        res_ok = '1920x1080' in resolution or '1080x1920' in resolution
+        dpi_ok = '240' in dpi
+        if not (res_ok and dpi_ok):
+            logger.warning(
+                "Display configuration differs from recommended. "
+                f"Detected: {resolution}, {dpi}. "
+                "Recommended: 1920x1080 at DPI 240. "
+                "Image-recognition accuracy may be reduced."
+            )
             
     def get_screenshot(self) -> Image.Image:
         """Get current screen as PIL Image using ADB screencap"""
@@ -308,22 +331,20 @@ class DeviceManager:
             adb_path = self._get_adb_path()
             
             # Kill ADB server and wait for completion
-            proc = Popen([adb_path, "kill-server"], 
-                  stdout=PIPE, 
+            proc = Popen([adb_path, "kill-server"],
+                  stdout=PIPE,
                   stderr=PIPE,
-                  startupinfo=STARTUPINFO(), 
-                  creationflags=CREATE_NO_WINDOW)
+                  **subprocess_hidden_kwargs())
             proc.communicate(timeout=5)
             proc.wait()
             
             # On Windows, also kill any hanging adb.exe processes
-            if system() == 'Windows':
+            if is_windows():
                 try:
-                    proc = Popen(['taskkill', '/F', '/IM', 'adb.exe'], 
-                          stdout=PIPE, 
+                    proc = Popen(['taskkill', '/F', '/IM', 'adb.exe'],
+                          stdout=PIPE,
                           stderr=PIPE,
-                          startupinfo=STARTUPINFO(), 
-                          creationflags=CREATE_NO_WINDOW)
+                          **subprocess_hidden_kwargs())
                     proc.communicate(timeout=5)
                     proc.wait()
                 except:
@@ -337,30 +358,8 @@ class DeviceManager:
         
     @staticmethod
     def _get_adb_path() -> str:
-        """Get ADB executable path"""
-        # For compiled version (--onedir), adb.exe is in same folder as EXE
-        if getattr(sys, 'frozen', False):
-            # Running as compiled executable
-            exe_dir = os.path.dirname(sys.executable)
-            adb_path = os.path.join(exe_dir, 'adb.exe')
-            if os.path.exists(adb_path):
-                return adb_path
-        
-        # Try local adb.exe (for development)
-        cwd = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        adb_path = os.path.join(cwd, 'adb.exe')
-        
-        if os.path.exists(adb_path):
-            return adb_path
-        
-        # Try system adb
-        adb_path = which('adb')
-        if adb_path:
-            return adb_path
-        
-        # Fallback to 'adb' and hope it's in PATH
-        return 'adb'
-        return 'adb'
+        """Get ADB executable path (delegates to platform_utils)."""
+        return resolve_adb_path()
         
     @staticmethod
     def _is_process_running(process_name: str) -> bool:
@@ -373,20 +372,5 @@ class DeviceManager:
         
     @staticmethod
     def _minimize_window():
-        """Minimize emulator window on Windows"""
-        if system() != 'Windows':
-            return
-            
-        try:
-            import win32gui
-            import win32con
-            
-            def callback(hwnd, windows):
-                if win32gui.IsWindowVisible(hwnd):
-                    title = win32gui.GetWindowText(hwnd)
-                    if 'BlueStacks' in title or 'HD-Player' in title:
-                        win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
-                        
-            win32gui.EnumWindows(callback, None)
-        except Exception as e:
-            logger.debug(f"Could not minimize window: {e}")
+        """Minimize emulator window (delegates to platform_utils)."""
+        minimize_emulator_windows()

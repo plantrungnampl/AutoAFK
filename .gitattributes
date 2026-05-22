@@ -1,0 +1,3 @@
+# Shell scripts must use LF endings even when committed from Windows,
+# otherwise Linux will fail with "bad interpreter: /usr/bin/env\r".
+*.sh text eol=lf

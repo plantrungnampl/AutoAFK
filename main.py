@@ -35,6 +35,7 @@ from src.activities.tower_activities import TowerPusher
 from src.utils.logger import Logger
 from src.utils.notifications import NotificationManager
 from src.utils.version_checker import VersionChecker
+from src.utils.platform_utils import is_windows, subprocess_detached_kwargs
 
 # Set appearance - Modern dark theme
 ctk.set_appearance_mode("dark")
@@ -158,7 +159,16 @@ class App(ctk.CTk):
                         self.textbox.insert('end', f'Version {latest} changes:\n', 'yellow')
                         self.textbox.insert('end', f'{notes[:500]}{"..." if len(notes) > 500 else ""}\n\n', 'warning')
 
-                    if self.config.getboolean('ADVANCED', 'autoupdate', fallback=False):
+                    if not is_windows():
+                        # The bundled updater is Windows-only; on Linux the
+                        # user updates the repo directly. Skip auto-launch
+                        # regardless of the ADVANCED.autoupdate setting.
+                        self.textbox.insert(
+                            'end',
+                            'Update available — git pull to update.\n\n',
+                            'yellow',
+                        )
+                    elif self.config.getboolean('ADVANCED', 'autoupdate', fallback=False):
                         self.textbox.insert('end', '🔄 Auto-update enabled, starting updater...\n\n', 'orange')
                         self.after(2000, self._run_updater)
                     else:
@@ -208,6 +218,14 @@ class App(ctk.CTk):
     
     def _run_updater(self) -> None:
         """Launch updater as a detached process with its own visible console window"""
+        # The bundled updater is a Windows .exe; on Linux users update via
+        # `git pull` and re-running install.sh, so we don't spawn anything.
+        if not is_windows():
+            logger.info(
+                "Update available. On Linux, update via 'git pull' and re-run "
+                "install.sh if dependencies have changed."
+            )
+            return
         try:
             # Resolve base directory (works for both frozen exe and script)
             if getattr(sys, 'frozen', False):
@@ -231,7 +249,7 @@ class App(ctk.CTk):
             # CREATE_NEW_PROCESS_GROUP ensures it survives when AutoAFK.exe is killed
             subprocess.Popen(
                 cmd,
-                creationflags=subprocess.CREATE_NEW_CONSOLE | subprocess.CREATE_NEW_PROCESS_GROUP
+                **subprocess_detached_kwargs()
             )
 
             self.textbox.insert('end', '🔄 Updater started in separate window\n', 'orange')

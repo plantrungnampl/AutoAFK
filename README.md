@@ -50,6 +50,58 @@ Configure your Android emulator so that:
 * DPI is 240
 * AFK's language is set to English
 
+## Linux Setup (run from source)
+
+> AutoAFK on Linux runs from source only. PyInstaller builds, the auto-updater,
+> and emulator-specific integrations are not provided in this release.
+
+### Prerequisites
+
+- Python 3.8 – 3.12 (`python3 --version`)
+- `android-tools` package providing `adb`. On CachyOS / Arch:
+  ```bash
+  sudo pacman -S android-tools
+  ```
+  On Debian / Ubuntu: `sudo apt install android-tools-adb`.
+  On Fedora: `sudo dnf install android-tools`.
+
+### Install
+
+```bash
+git clone https://github.com/Hammanek/AutoAFK.git
+cd AutoAFK
+chmod +x install.sh start.sh   # only needed if the executable bit was lost
+./install.sh
+```
+
+### Run
+
+```bash
+./start.sh
+# or, equivalently:
+python3 main.py
+# headless modes (same flags as Windows):
+python3 main.py --dailies
+python3 main.py --autotower
+python3 main.py --tower kt
+```
+
+### Display configuration
+
+The recommended emulator/device display is **1920x1080 at DPI 240**.
+Other configurations may work with reduced image-recognition accuracy;
+AutoAFK will log a warning at startup if it detects a non-recommended
+configuration but will not block startup.
+
+### Updating on Linux
+
+```bash
+git pull
+./install.sh    # only if requirements.txt changed
+```
+
+The in-app auto-updater is Windows-only.
+
 ## Configuration
 
 Edit `settings.ini`:
