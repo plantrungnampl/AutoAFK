@@ -53,6 +53,8 @@ a = Analysis(
         # dev-only LLM Flow Recorder, Req 1.3
         'src.dev_tools',
         'src.dev_tools.llm_recorder',
+        # dev-only LLM Agent, parallel to the recorder
+        'src.dev_tools.llm_agent',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

@@ -1285,6 +1285,10 @@ def parse_arguments() -> argparse.Namespace:
                        action='store_true',
                        dest='llm_recorder',
                        help=argparse.SUPPRESS)  # dev-only; hidden from --help
+    parser.add_argument('--llm-agent', '--la',
+                       action='store_true',
+                       dest='llm_agent',
+                       help=argparse.SUPPRESS)  # dev-only; hidden from --help
     return parser.parse_args()
 
 
@@ -1293,8 +1297,11 @@ def main() -> None:
     global args
     args = parse_arguments()
     
+    # If --llm-agent flag, launch dev-only agent GUI
+    if args.llm_agent:
+        run_llm_agent()
     # If --llm-recorder flag, launch dev-only recorder GUI
-    if args.llm_recorder:
+    elif args.llm_recorder:
         run_llm_recorder()
     # If --dailies flag, run headless
     elif args.dailies:
@@ -1331,6 +1338,30 @@ def run_llm_recorder() -> None:
 
     gui = RecorderGUI(config=config, device_manager=device_manager)
     gui.mainloop()
+
+
+def run_llm_agent() -> None:
+    """Launch the developer-only LLM Agent GUI.
+
+    Imports are deferred to keep src.dev_tools out of normal startup paths
+    and out of the PyInstaller dependency graph. Never invoked from
+    --dailies, --autotower, --tower, or the GUI App class. (Req 1.1, 1.2)
+    """
+    from src.core.config import Config
+    from src.core.device_manager import DeviceManager
+    from src.utils.logger import Logger, set_device_manager
+
+    Logger()  # initialize singleton
+
+    config = Config('settings.ini')
+    device_manager = DeviceManager(config)
+    device_manager.connect()  # may fail; agent GUI surfaces it
+    set_device_manager(device_manager)
+
+    # Deferred import — keeps src.dev_tools off the production import graph.
+    from src.dev_tools.llm_agent.agent_gui import AgentGUI
+
+    AgentGUI(config=config, device_manager=device_manager).mainloop()
 
 
 def run_dailies_headless() -> None:
