@@ -733,3 +733,77 @@ Treat every proposal as scaffolding. The model can:
 
 Always read the generated `src/activities/<name>_activities.py`, run it against the device, and refine it the same way you would any hand-written activity module.
 
+
+---
+
+## LLM Agent (developer-only)
+
+The **LLM Agent** is a dev-time-only sibling of the LLM Flow Recorder. Where
+the recorder captures a manual flow and asks the LLM to draft an activity
+module from it, the agent takes a plain-English goal ("collect daily login
+reward") and drives the connected device step-by-step toward that goal under
+human approval.
+
+It is excluded from the PyInstaller bundle and never runs in normal app or
+`--dailies` flows.
+
+### Quickstart
+
+```bash
+pip install -r requirements-dev.txt
+ollama pull qwen2.5vl:3b           # or qwen2.5vl:7b if you have ≥12GB VRAM
+# settings.ini: [LLM_AGENT] enabled=True
+python main.py --llm-agent
+```
+
+### Setup
+
+Same Ollama setup as the recorder. The agent reuses `[LLM_TOOLING]` for
+host/model/timeouts/image_max_dim/num_ctx, plus a dedicated `[LLM_AGENT]`
+section with these keys:
+
+```ini
+[LLM_AGENT]
+enabled=True
+max_steps=20
+history_window=3
+```
+
+`enabled=False` is the safe default — the agent GUI will open but the
+**Start** button is disabled with an explanatory tooltip.
+
+### Using it
+
+1. Connect your device (Genymotion, Waydroid, Bluestacks, …) and confirm
+   `adb devices` shows it.
+2. `python main.py --llm-agent` (the flag is hidden from `--help`).
+3. Type a goal in the entry field. Keep it short and concrete: "tap the
+   daily reward icon", "open settings", "go to King's Tower".
+4. Click **Start**. The agent calls Ollama, displays a card with the
+   proposed action, and waits.
+5. Click **Approve** to fire the tap, **Skip** to record but not execute,
+   or **Stop** to exit.
+6. Toggle **Trust mode** to skip the confirm dialog for subsequent
+   actions. Trust mode applies to in-game purchase confirmations as well —
+   review carefully before enabling.
+7. The loop ends on `done`, `max_steps`, `Stop`, or any structured error.
+
+### When NOT to use the agent
+
+The agent is much slower and less reliable than the existing
+template-matching activities. Production daily runs should keep using
+`--dailies`. Use the agent for:
+
+- Exploring new flows you might want to record next
+- One-off tasks for which writing a full activity isn't worth it
+- Demonstrating to others how the bot navigates the UI
+
+### Troubleshooting
+
+Same modal categories as the recorder, plus:
+
+- `MAX_STEPS`: agent didn't reach `done` within `[LLM_AGENT].max_steps`.
+  Either the goal is too broad or the model misunderstood it. Increase
+  the cap, or reword the goal.
+- `ADB_FAILURE`: a tap or screenshot timed out or threw. Check that the
+  device is still connected and responsive.
