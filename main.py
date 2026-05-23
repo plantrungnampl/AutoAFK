@@ -1281,6 +1281,10 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('-l', '--logging', 
                        action='store_true',
                        help='Enable file logging')
+    parser.add_argument('--llm-recorder', '--lr',
+                       action='store_true',
+                       dest='llm_recorder',
+                       help=argparse.SUPPRESS)  # dev-only; hidden from --help
     return parser.parse_args()
 
 
@@ -1289,8 +1293,11 @@ def main() -> None:
     global args
     args = parse_arguments()
     
+    # If --llm-recorder flag, launch dev-only recorder GUI
+    if args.llm_recorder:
+        run_llm_recorder()
     # If --dailies flag, run headless
-    if args.dailies:
+    elif args.dailies:
         run_dailies_headless()
     # If --tower or --autotower flag, run tower push
     elif args.tower or args.autotower:
@@ -1299,6 +1306,31 @@ def main() -> None:
         # Run GUI
         app = App()
         app.mainloop()
+
+
+def run_llm_recorder() -> None:
+    """Launch the developer-only LLM Flow Recorder GUI.
+
+    Imports are deferred to keep src.dev_tools out of normal startup paths
+    and out of the PyInstaller dependency graph. Never invoked from --dailies,
+    --autotower, --tower, or the GUI App class. (Req 1.1, 1.2, 12.1)
+    """
+    from src.core.config import Config
+    from src.core.device_manager import DeviceManager
+    from src.utils.logger import Logger, set_device_manager
+
+    Logger()  # initialize singleton
+
+    config = Config('settings.ini')
+    device_manager = DeviceManager(config)
+    device_manager.connect()  # may fail; recorder handles disconnected state
+    set_device_manager(device_manager)
+
+    # Deferred import — keeps src.dev_tools off the production import graph.
+    from src.dev_tools.llm_recorder.recorder_gui import RecorderGUI
+
+    gui = RecorderGUI(config=config, device_manager=device_manager)
+    gui.mainloop()
 
 
 def run_dailies_headless() -> None:

@@ -95,3 +95,16 @@ enable = False
 channel_id = 
 token = 
 
+# Dev-time-only LLM Flow Recorder. Not used by --dailies, --autotower, --tower, or the compiled .exe.
+[LLM_TOOLING]
+enabled=False
+ollama_host=http://localhost:11434
+model_name=qwen2.5vl:7b
+request_timeout_s=300
+tap_settle_ms=1000
+error_excerpt_max_chars=2000
+image_max_dim=1024
+# Ollama context window (tokens). Each downscaled screenshot takes
+# roughly 700-900 vision tokens, so allow ample headroom for longer
+# sessions. Larger values use more VRAM/RAM at request time.
+num_ctx=8192
