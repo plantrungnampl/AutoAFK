@@ -1,0 +1,515 @@
+# Instincts generated from https://github.com/plantrungnampl/AutoAFK
+# Generated: 2026-05-23T20:26:10.294Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: AutoAFK-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, spec, plan, fix, docs
+
+## Evidence
+
+- 14 commits analyzed
+- Detected conventional commit pattern
+- Examples: spec: LLM Agent design (dev-time autonomous AFK Arena agent), plan: LLM Agent implementation plan (10 tasks)
+
+---
+id: AutoAFK-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Commit Length
+
+## Action
+
+Write moderate-length commit messages (~56 characters)
+
+## Evidence
+
+- Average commit message length: 56 chars
+- Based on 14 commits
+
+---
+id: AutoAFK-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Naming Files
+
+## Action
+
+Use snake_case naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: snake_case
+
+---
+id: AutoAFK-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: AutoAFK-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: AutoAFK-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: AutoAFK-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.ts
+
+## Evidence
+
+- File pattern: *.test.ts
+- Consistent across test files
+
+---
+id: AutoAFK-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~24x per month
+- Files: **/*.test.*
+
+---
+id: AutoAFK-workflow-add-new-dev-tool-module
+trigger: "when doing add new dev tool module"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Workflow Add New Dev Tool Module
+
+## Action
+
+Follow the add-new-dev-tool-module workflow:
+1. Create new package/module directory under src/dev_tools/<module_name>/ with __init__.py.
+2. Create corresponding test directory under tests/dev_tools/<module_name>/ with __init__.py.
+3. Add initial implementation files (e.g., models.py, code_generator.py, etc.).
+4. Add initial test files for new module.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: src/dev_tools/<module_name>/__init__.py, tests/dev_tools/<module_name>/__init__.py
+
+---
+id: AutoAFK-workflow-feature-implementation-with-tests
+trigger: "when doing feature implementation with tests"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Workflow Feature Implementation With Tests
+
+## Action
+
+Follow the feature-implementation-with-tests workflow:
+1. Add new implementation file(s) to src/dev_tools/<module_name>/ (e.g., models.py, action_schema.py, agent_client.py, agent_loop.py, agent_gui.py, prompt_templates.py).
+2. Add or update corresponding test file(s) in tests/dev_tools/<module_name>/ (e.g., test_action_schema.py, test_agent_client_errors.py, test_agent_loop.py).
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: src/dev_tools/<module_name>/*.py, tests/dev_tools/<module_name>/test_*.py
+
+---
+id: AutoAFK-workflow-update-documentation-and-guides
+trigger: "when doing update documentation and guides"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/plantrungnampl/AutoAFK
+---
+
+# AutoAFK Workflow Update Documentation And Guides
+
+## Action
+
+Follow the update-documentation-and-guides workflow:
+1. Add or update markdown files in docs/ or project root (e.g., DEVELOPER_GUIDE.md, README.md, GENYMOTION_SETUP.md, docs/llm-agent-smoke-test.md).
+2. Add or update smoke test checklists or specifications.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: DEVELOPER_GUIDE.md, README.md, docs/*.md
+
+---
+id: autoafk-naming-files-snake-case
+trigger: "When creating a new Python file"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Naming Files Snake Case
+
+## Action
+
+Name the file using snake_case
+
+## Evidence
+
+- Pattern in src/dev_tools/llm_recorder/code_generator.py
+- Pattern in src/dev_tools/llm_recorder/models.py
+
+---
+id: autoafk-naming-functions-camelCase
+trigger: "When defining a new function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Naming Functions CamelCase
+
+## Action
+
+Name the function using camelCase
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+
+---
+id: autoafk-naming-classes-pascal-case
+trigger: "When defining a new class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Naming Classes Pascal Case
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+
+---
+id: autoafk-naming-constants-screaming-snake-case
+trigger: "When defining a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Naming Constants Screaming Snake Case
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+
+---
+id: autoafk-imports-relative
+trigger: "When importing modules within the package"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Imports Relative
+
+## Action
+
+Use relative imports
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+
+---
+id: autoafk-exports-named
+trigger: "When exporting functions or classes from a module"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Exports Named
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+
+---
+id: autoafk-test-location-separate
+trigger: "When adding tests for a module"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Test Location Separate
+
+## Action
+
+Place test files in the tests/ directory, mirroring the src/ structure
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation
+- Pattern in tests/dev_tools/llm_recorder/
+
+---
+id: autoafk-test-file-naming
+trigger: "When creating a test file for a module"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Test File Naming
+
+## Action
+
+Name the test file as test_<module>.py
+
+## Evidence
+
+- Pattern in tests/dev_tools/llm_recorder/test_action_schema.py
+- Pattern in testing.filePattern
+
+---
+id: autoafk-test-type-unit
+trigger: "When writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Test Type Unit
+
+## Action
+
+Write unit tests for individual components
+
+## Evidence
+
+- Pattern in testing.testTypes
+
+---
+id: autoafk-git-commit-conventional
+trigger: "When writing a commit message"
+confidence: 0.95
+domain: git
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Git Commit Conventional
+
+## Action
+
+Use conventional commit format: <type>(<scope>): <description>
+
+## Evidence
+
+- Seen in commit 'feat(llm-recorder): dev-time tool for scaffolding new activities'
+- Pattern in commits.prefixes
+
+---
+id: autoafk-git-commit-length
+trigger: "When writing a commit message"
+confidence: 0.8
+domain: git
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Git Commit Length
+
+## Action
+
+Keep the commit message concise (around 56 characters on average)
+
+## Evidence
+
+- Pattern in commits.averageLength
+
+---
+id: autoafk-workflow-add-new-dev-tool-module
+trigger: "When starting development of a new dev tool module"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Workflow Add New Dev Tool Module
+
+## Action
+
+Create src/dev_tools/<module_name>/__init__.py and tests/dev_tools/<module_name>/__init__.py, then add initial implementation and test files
+
+## Evidence
+
+- Workflow 'add-new-dev-tool-module'
+- Files src/dev_tools/<module_name>/__init__.py, tests/dev_tools/<module_name>/__init__.py
+
+---
+id: autoafk-workflow-feature-implementation-with-tests
+trigger: "When adding a new feature to an existing dev tool module"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Workflow Feature Implementation With Tests
+
+## Action
+
+Add new implementation files to src/dev_tools/<module_name>/ and corresponding test files to tests/dev_tools/<module_name>/
+
+## Evidence
+
+- Workflow 'feature-implementation-with-tests'
+- Files src/dev_tools/<module_name>/*.py, tests/dev_tools/<module_name>/test_*.py
+
+---
+id: autoafk-workflow-update-documentation-and-guides
+trigger: "When documenting new features or updating guides"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: plantrungnampl/AutoAFK
+---
+
+# Autoafk Workflow Update Documentation And Guides
+
+## Action
+
+Add or update markdown files in docs/ or project root (e.g., DEVELOPER_GUIDE.md, README.md, docs/*.md, GENYMOTION_SETUP.md, WAYDROID_SETUP.md)
+
+## Evidence
+
+- Workflow 'update-documentation-and-guides'
+- Files DEVELOPER_GUIDE.md, README.md, docs/*.md
+
