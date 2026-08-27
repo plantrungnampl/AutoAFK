@@ -62,7 +62,7 @@ Thumbs.db
 desktop.ini
 
 # Project specific
-test_*.py
+/test_*.py
 temp/
 old/
 backup/

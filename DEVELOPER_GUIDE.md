@@ -610,3 +610,200 @@ activity_manager.my_activity.my_function()
 - Review `game_controller.py` for navigation methods
 
 Happy coding! 🎮
+
+---
+
+## LLM Flow Recorder (developer-only)
+
+The **LLM Flow Recorder** is a dev-time-only tool that helps scaffold new activity modules by recording a tap-by-tap walkthrough of an in-game flow on the connected device, then asking a local multimodal LLM (Ollama running `qwen2.5vl:7b`) to propose:
+
+- One or more PNG template crops (`img/buttons/...` or `img/labels/...`)
+- A starter activity module (`src/activities/<name>_activities.py`)
+- The three integration snippets needed to wire it up (`ActivityManager.__init__`, `dailies_runner.py`, `settings.ini`)
+
+It is excluded from the PyInstaller bundle (`AutoAFK.spec` excludes `src.dev_tools`) and never runs in normal app or `--dailies` flows. End users will not see it.
+
+### Quickstart
+
+```bash
+pip install -r requirements-dev.txt
+ollama pull qwen2.5vl:7b
+ollama serve &                     # if not already running as a service
+# make sure [LLM_TOOLING] enabled=True is set in settings.ini
+python main.py --llm-recorder
+```
+
+### Setup
+
+1. Install the dev dependencies (in addition to `requirements.txt`):
+
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+2. Install [Ollama](https://ollama.com/) for your platform, then pull the model the recorder expects:
+
+   ```bash
+   ollama pull qwen2.5vl:7b
+   ```
+
+   Make sure the Ollama server is running and reachable at `http://localhost:11434` (the default).
+
+   > **Note:** the older `qwen2-vl` tag is no longer published on the Ollama library. If you need a smaller model, `qwen2.5vl:3b` (~3 GB VRAM) and `llava:7b` (~5 GB VRAM) both work; just update `model_name` in `settings.ini` to match.
+
+3. Enable the recorder in `settings.ini`. `settings.ini` is git-ignored, so on a fresh clone you copy it from the template:
+
+   ```bash
+   cp settings.ini.example settings.ini   # only if settings.ini does not exist yet
+   ```
+
+   Then flip `enabled=True` under `[LLM_TOOLING]`:
+
+   ```ini
+   [LLM_TOOLING]
+   enabled=True
+   ollama_host=http://localhost:11434
+   model_name=qwen2.5vl:7b
+   request_timeout_s=120
+   tap_settle_ms=1000
+   error_excerpt_max_chars=2000
+   ```
+
+   With `enabled=False` the recorder GUI still opens, but the **Analyze with LLM** button is disabled.
+
+### Launching the recorder
+
+With a device connected (same ADB requirements as the main bot — 1080×1920 portrait), run:
+
+```bash
+python main.py --llm-recorder
+```
+
+The flag is intentionally hidden from `--help`. It is for developers only.
+
+From the recorder window you can:
+
+- See a live preview of the device screen
+- Tap on the preview to forward the tap to the device (each tap captures a `before` + `after` screenshot)
+- Delete the last step, save the session to disk, or load a previously saved session
+- Click **Analyze with LLM** to send the recorded steps to Ollama and review the proposals
+
+### Output locations
+
+The recorder writes to exactly four locations. Nothing else on disk is touched.
+
+| Path | Written when |
+|------|--------------|
+| `img/buttons/` | You accept a `TemplateProposal` whose filename starts with `buttons/` |
+| `img/labels/` | You accept a `TemplateProposal` whose filename starts with `labels/` |
+| `src/activities/` | You accept the `ActivityProposal` (writes a new `<name>_activities.py`) |
+| `debug/llm_recorder/<ts>/` | You save a recording session (`session.json` + per-step PNGs) |
+
+Existing files are never overwritten without an explicit confirm-overwrite prompt.
+
+### Integration snippets must be applied by hand
+
+The recorder will **not** modify `src/core/activity_manager.py`, `src/core/dailies_runner.py`, or `settings.ini`. After saving an activity, you have to apply the three integration snippets the LLM produced manually:
+
+1. Add the import + instantiation to `ActivityManager.__init__` in `src/core/activity_manager.py`
+2. Add the conditional call site to `dailies_runner.py` (respect existing ordering)
+3. Add the new config toggle to your `settings.ini` (and to `settings.ini.example` if you intend to ship it)
+
+The recorder GUI provides **Copy to clipboard** buttons for each of the three snippets to make this straightforward, but the edits themselves are yours to make.
+
+### Troubleshooting
+
+| Modal / error | Cause | Fix |
+|---|---|---|
+| `OLLAMA_UNREACHABLE` | Ollama server is not running | `ollama serve` (or restart the system service) |
+| `OLLAMA_TIMEOUT` | Model is slow to respond | Increase `request_timeout_s`, or switch to a smaller model |
+| `MODEL_MISSING` | Model not pulled or wrong tag | `ollama pull qwen2.5vl:7b`. The old `qwen2-vl` tag is no longer published. |
+| `INVALID_JSON` | Model returned non-JSON | Click Analyze again. If it persists, the model is too small or quantized too aggressively. |
+| `SCHEMA_VIOLATION` | Model returned JSON in the wrong shape | Check the `path` in the modal; retry, or switch to a stronger model. |
+| `EMPTY_SESSION` | No steps recorded yet | Record at least one tap before clicking Analyze. |
+
+### LLM output is a starting point, not finished code
+
+Treat every proposal as scaffolding. The model can:
+
+- Crop a slightly off bbox (review the overlay before saving)
+- Pick a filename that already exists or doesn't match your naming conventions
+- Generate a class skeleton that compiles (`ast.parse` is enforced) but still needs real logic, error recovery, location confirmation, popup clearing, and config wiring
+- Hallucinate config sections or keys — review against the existing `settings.ini` layout
+
+Always read the generated `src/activities/<name>_activities.py`, run it against the device, and refine it the same way you would any hand-written activity module.
+
+
+---
+
+## LLM Agent (developer-only)
+
+The **LLM Agent** is a dev-time-only sibling of the LLM Flow Recorder. Where
+the recorder captures a manual flow and asks the LLM to draft an activity
+module from it, the agent takes a plain-English goal ("collect daily login
+reward") and drives the connected device step-by-step toward that goal under
+human approval.
+
+It is excluded from the PyInstaller bundle and never runs in normal app or
+`--dailies` flows.
+
+### Quickstart
+
+```bash
+pip install -r requirements-dev.txt
+ollama pull qwen2.5vl:3b           # or qwen2.5vl:7b if you have ≥12GB VRAM
+# settings.ini: [LLM_AGENT] enabled=True
+python main.py --llm-agent
+```
+
+### Setup
+
+Same Ollama setup as the recorder. The agent reuses `[LLM_TOOLING]` for
+host/model/timeouts/image_max_dim/num_ctx, plus a dedicated `[LLM_AGENT]`
+section with these keys:
+
+```ini
+[LLM_AGENT]
+enabled=True
+max_steps=20
+history_window=3
+```
+
+`enabled=False` is the safe default — the agent GUI will open but the
+**Start** button is disabled with an explanatory tooltip.
+
+### Using it
+
+1. Connect your device (Genymotion, Waydroid, Bluestacks, …) and confirm
+   `adb devices` shows it.
+2. `python main.py --llm-agent` (the flag is hidden from `--help`).
+3. Type a goal in the entry field. Keep it short and concrete: "tap the
+   daily reward icon", "open settings", "go to King's Tower".
+4. Click **Start**. The agent calls Ollama, displays a card with the
+   proposed action, and waits.
+5. Click **Approve** to fire the tap, **Skip** to record but not execute,
+   or **Stop** to exit.
+6. Toggle **Trust mode** to skip the confirm dialog for subsequent
+   actions. Trust mode applies to in-game purchase confirmations as well —
+   review carefully before enabling.
+7. The loop ends on `done`, `max_steps`, `Stop`, or any structured error.
+
+### When NOT to use the agent
+
+The agent is much slower and less reliable than the existing
+template-matching activities. Production daily runs should keep using
+`--dailies`. Use the agent for:
+
+- Exploring new flows you might want to record next
+- One-off tasks for which writing a full activity isn't worth it
+- Demonstrating to others how the bot navigates the UI
+
+### Troubleshooting
+
+Same modal categories as the recorder, plus:
+
+- `MAX_STEPS`: agent didn't reach `done` within `[LLM_AGENT].max_steps`.
+  Either the goal is too broad or the model misunderstood it. Increase
+  the cap, or reword the goal.
+- `ADB_FAILURE`: a tap or screenshot timed out or threw. Check that the
+  device is still connected and responsive.

@@ -1,0 +1,16 @@
+# AutoAFK Development Dependencies
+# Install with: pip install -r requirements-dev.txt
+#
+# Includes everything from requirements.txt plus dev-only tools used by
+# tests under tests/ (notably the LLM Flow Recorder dev tool). These
+# packages are NOT bundled into the PyInstaller release.
+
+-r requirements.txt
+
+# Test framework (mandatory for running the test suite)
+pytest>=7.4,<9.0
+
+# Optional: enables a stricter cross-check of the LLM output JSON schema
+# in tests/dev_tools/llm_recorder/. The recorder's runtime validator is
+# stdlib-only, so this dependency is not required to run the tests.
+# jsonschema>=4.0,<5.0

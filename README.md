@@ -93,6 +93,13 @@ Other configurations may work with reduced image-recognition accuracy;
 AutoAFK will log a warning at startup if it detects a non-recommended
 configuration but will not block startup.
 
+### Choosing an emulator on Linux
+
+| Emulator | Setup guide | Notes |
+|----------|-------------|-------|
+| **Genymotion** | [`GENYMOTION_SETUP.md`](GENYMOTION_SETUP.md) | Recommended. VirtualBox-based, official ADB support, ARM-translation built in. Free Personal Edition. |
+| **Waydroid** | [`WAYDROID_SETUP.md`](WAYDROID_SETUP.md) | Native Linux container. Lighter than Genymotion but requires firewall + libhoudini setup; more brittle. |
+
 ### Updating on Linux
 
 ```bash

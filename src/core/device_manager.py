@@ -60,8 +60,9 @@ class DeviceManager:
             logger.error(str(e))
             return False
 
-        # Kill any hanging ADB processes first
-        self._kill_adb_processes()
+        # Kill any hanging ADB processes first (skip if adbrestart is disabled)
+        if self.config.getboolean('ADVANCED', 'adbrestart', fallback=True):
+            self._kill_adb_processes()
             
         logger.info("Attempting to connect to device...")
         
@@ -160,7 +161,8 @@ class DeviceManager:
     def _connect_to_port(self, port: int) -> Optional[any]:
         """Connect to device on specific port"""
         adb_path = self._get_adb_path()
-        device_addr = f'127.0.0.1:{port}'
+        device_ip = self.config.get('ADVANCED', 'deviceip', fallback='127.0.0.1')
+        device_addr = f'{device_ip}:{port}'
 
         result = Popen([adb_path, 'connect', device_addr],
                       stdout=PIPE,
